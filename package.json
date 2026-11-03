@@ -4,6 +4,7 @@
   "private": true,
   "description": "어르신을 위한 쉬운 디지털 생활 안내",
   "scripts": {
+    "build": "node scripts/build.mjs",
     "start": "node scripts/preview.mjs",
     "check": "node scripts/check.mjs"
   },

@@ -1,4 +1,4 @@
 {
   "project_id": "appgprj_6ae962d44b748191b6bd5273f8fe6d50",
-  "static": { "directory": "ex02/src/main/WebContent" }
+  "static": { "directory": "dist" }
 }

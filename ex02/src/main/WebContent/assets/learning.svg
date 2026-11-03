@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 430" fill="none">
+<defs><pattern id="dots" width="17" height="17" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#b9c8a7" opacity=".5"/></pattern></defs>
+<path d="M58 216C24 119 115 40 248 50c87 7 214-18 254 82 49 124-5 246-161 255C192 396 86 331 58 216Z" fill="#eaf0df"/>
+<path d="M380 38h124v121H380z" fill="url(#dots)"/><circle cx="100" cy="83" r="10" stroke="#d8b77d" stroke-width="2"/><path d="m122 65 6-8m-9 4 10 1" stroke="#99ac82" stroke-width="2"/>
+<path d="M42 354c103-19 310-12 469 1" stroke="#a8b696" stroke-width="2" stroke-linecap="round"/>
+<!-- A large, reassuringly simple browser window. -->
+<rect x="121" y="101" width="319" height="223" rx="14" fill="#c5d2b6" transform="rotate(-3 121 101)"/>
+<g transform="rotate(-3 270 205)"><rect x="113" y="87" width="319" height="223" rx="13" fill="#fffdf6" stroke="#63805b" stroke-width="2"/><path d="M114 119h317" stroke="#aabc98" stroke-width="2"/><circle cx="130" cy="103" r="4" fill="#dbaa79"/><circle cx="143" cy="103" r="4" fill="#d2d6b0"/><circle cx="156" cy="103" r="4" fill="#90a884"/><rect x="207" y="99" width="143" height="9" rx="4.5" fill="#e9eddf"/>
+<rect x="134" y="140" width="130" height="13" rx="4" fill="#3e6749"/><rect x="134" y="164" width="191" height="7" rx="3.5" fill="#d9decd"/><rect x="134" y="180" width="159" height="7" rx="3.5" fill="#e5e8dd"/>
+<rect x="134" y="210" width="77" height="72" rx="9" fill="#e9efdd"/><rect x="221" y="210" width="77" height="72" rx="9" fill="#f6ead6"/><rect x="308" y="210" width="77" height="72" rx="9" fill="#e8edf0"/>
+<path d="m157 244 16-10 16 10v20h-32Zm10 20v-11h12v11m-7-21h2" stroke="#6c8b59" stroke-width="2" stroke-linejoin="round"/>
+<path d="M260 260s-20-11-14-21c5-8 12-4 14 0 2-4 9-8 14 0 6 10-14 21-14 21Z" stroke="#b5875a" stroke-width="2"/>
+<path d="M341 232h12v9h9v12h-9v9h-12v-9h-9v-12h9Z" stroke="#6c8a95" stroke-width="2"/>
+</g>
+<!-- Floating accessibility card. -->
+<g transform="rotate(5 425 143)"><rect x="392" y="124" width="139" height="63" rx="11" fill="#fffcf5" stroke="#d4dbc6" stroke-width="1.5"/><path d="m408 164 10-25 10 25m-17-8h14m11 8 7-18 7 18m-12-6h10" stroke="#476b43" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="503" cy="155" r="14" fill="#e7efdb"/><path d="M496 155h14m-7-7v14" stroke="#476b43" stroke-width="2" stroke-linecap="round"/></g>
+<!-- Older learner, seated with a tablet. -->
+<path d="M200 351c-16-44-23-75-16-95 4-14 14-22 26-24 23-3 37 15 40 38l4 78" fill="#bdccaa" stroke="#7b936c" stroke-width="1.5"/>
+<path d="m196 334-15 35-12 25m64-59 21 35 4 25" stroke="#455e47" stroke-width="17" stroke-linecap="round"/>
+<path d="m169 391-14 7 25 1m77-5 14 4h-24" stroke="#39473b" stroke-width="7" stroke-linecap="round"/>
+<path d="M198 223v17c9 8 20 7 24-1l-1-22" fill="#e5b992"/>
+<path d="M184 198c-2-24 15-35 33-29 18 5 20 25 11 42-6 11-19 18-29 11-9-6-12-13-15-24Z" fill="#e8c39d"/>
+<path d="M186 201c-13-15-8-33 9-40 13-6 32 1 34 14-9 4-19 2-28-3 0 13-7 18-15 18Z" fill="#dce0d3" stroke="#8d9b83" stroke-width="1.5"/>
+<path d="m203 196 11-1m8-1 10-1m-18 1 8-1" stroke="#53664e" stroke-width="2"/><path d="M202 194v8h12v-9m8-1v9h10v-10" stroke="#53664e" stroke-width="1.5"/><path d="M212 212c4 2 7 1 9-1" stroke="#956c4e" stroke-width="1.5" stroke-linecap="round"/>
+<path d="m196 270 15 26 39-10" stroke="#e8c39d" stroke-width="13" stroke-linecap="round"/><path d="m230 263 17 15 18-6" stroke="#e8c39d" stroke-width="12" stroke-linecap="round"/>
+<rect x="244" y="253" width="56" height="42" rx="5" fill="#466c50" transform="rotate(-13 244 253)"/><rect x="249" y="258" width="46" height="30" rx="2" fill="#f4f3dc" transform="rotate(-13 249 258)"/><path d="m263 271 5 4 9-12" stroke="#91a478" stroke-width="2"/>
+<path d="M171 333h87m-76 0v38m64-38v38" stroke="#a5ae91" stroke-width="6" stroke-linecap="round"/>
+<!-- A friendly helper. -->
+<path d="m378 276-8 47-6 47m29-95 5 46 12 46" stroke="#6d7d75" stroke-width="18" stroke-linecap="round"/>
+<path d="m364 368-12 5h22m36-6 14 5h-23" stroke="#394c42" stroke-width="7" stroke-linecap="round"/>
+<path d="M370 198c-11 6-14 22-14 43l2 44c16 10 35 10 49-1l-2-48c-1-23-12-40-35-38Z" fill="#e6b586" stroke="#bd946c" stroke-width="1.5"/>
+<path d="M371 184v18c8 8 16 5 18-2v-21" fill="#e5bb99"/>
+<path d="M365 157c1-20 24-24 34-8 8 13 2 33-8 40-10 5-23-8-26-20Z" fill="#edc6a3"/>
+<path d="M362 163c-11-16 0-29 16-30 15-1 25 7 25 21-11 1-20-3-24-10-2 11-7 16-17 19Z" fill="#3f5045"/>
+<path d="m372 214-28 30-43-3m91-19-24 35-30 2" stroke="#edc6a3" stroke-width="12" stroke-linecap="round"/>
+<path d="M299 241h-10m49 18-11 1" stroke="#edc6a3" stroke-width="8" stroke-linecap="round"/><path d="M376 171h1m13-3h1" stroke="#54614b" stroke-width="2" stroke-linecap="round"/><path d="M380 180c3 1 6 0 7-2" stroke="#ac7854" stroke-width="1.5" stroke-linecap="round"/>
+<!-- A potted apple tree and small sparkles. -->
+<path d="M75 344v-92m0 53-20-22m20 4 21-20" stroke="#7f9870" stroke-width="4" stroke-linecap="round"/><path d="M74 279c-37-1-44-40-23-49-9-27 33-41 43-17 31-1 39 35 17 46-1 18-20 27-37 20Z" fill="#b3c69a"/><path d="M65 318h31l-5 39H70Z" fill="#d8ad7a"/><path d="M66 324h29" stroke="#bf9568" stroke-width="2"/><path d="M74 312v-55" stroke="#7f9870" stroke-width="4"/>
+<circle cx="55" cy="251" r="7" fill="#d9946e"/><circle cx="94" cy="235" r="7" fill="#d9946e"/><path d="m54 243 3-5m36-11 3-4" stroke="#6d8c59" stroke-width="2"/>
+<path d="m472 241 4 9 10 1-8 7 2 10-9-5-8 5 2-10-7-7 10-1Z" fill="#d5b87c"/><path d="m331 55 3 7 8 1-6 5 2 8-7-4-6 4 1-8-5-5 7-1Z" fill="#d0dcb9"/>
+<path d="M445 306c12-5 22 5 15 15l-15 14-15-14c-7-10 3-20 15-15Z" fill="#f5e2cc" stroke="#d2a67b" stroke-width="1.5"/>
+</svg>

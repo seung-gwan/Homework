@@ -84,3 +84,59 @@
     ]
   });
 })();
+
+/* Captured from official public pages on 2026-11-03. No live input fields. */
+(() => {
+  const D=window.APPLE_TREE;
+  const p=(x,y,w,h,label)=>({x,y,w,h,label});
+  const screen=(name,title,points,width=1253,height=705)=>({
+    title,body:title,tip:'빨간 원으로 표시한 곳을 확인하세요.',
+    image:'assets/screens/'+name,points,width,height,mock:null
+  });
+  const replace=(id,details,steps,sources)=>Object.assign(D.guides.find(g=>g.id===id),{
+    ...details,photo:true,steps,sources,prepare:'공식 홈페이지의 화면 사진으로 안내합니다.'
+  });
+  const gov='https://plus.gov.kr/';
+  const issue='https://www.gov.kr/mw/AA020InfoCappView.do?CappBizCD=13100000015';
+  const example='https://www.gov.kr/mw/AA040WHMinwonSamplePopup.do?cappBizCd=1310000001501';
+  const form=(title,points,top,height)=>({...screen('gov-form.gif',title,points,1049,777),crop:{top,height}});
+  const auth=(title='사용하는 인증 방법을 누르세요')=>screen('gov-login.jpg',title,[
+    p(33.5,14.5,31.8,24,'간편인증'),p(65.4,14.5,31.8,24,'공동인증서')
+  ]);
+  replace('documents',{region:'national',url:gov},[
+    screen('gov-home.jpg','‘주민등록등본(초본)’을 누르세요',[p(18,48.5,16,9,'주민등록등본(초본)')]),
+    screen('gov-issue.jpg','오른쪽 파란색 ‘발급하기’를 누르세요',[p(70,69,25,11,'발급하기')]),
+    screen('gov-choice.jpg','회원·비회원 중 이용할 방법을 누르세요',[p(35.4,46,14.6,9.2,'회원 신청하기'),p(49,46,14.6,9.2,'비회원 신청하기')]),
+    auth('회원 신청 예시 · 인증 방법을 고르세요'),
+    form('주소를 고르세요 · 정부24 작성예시',[p(3.5,19.5,53,10,'시도와 시군구 선택')],0,.37),
+    form('발급형태를 고르세요 · 정부24 작성예시',[p(3.5,45.5,33,7,'전체 발급 또는 선택 발급')],.37,.25),
+    form('수령방법을 고르세요 · 정부24 작성예시',[p(3.5,83,89,13,'수령방법')],.64,.36)
+  ],[['정부24 등본 발급 안내',issue],['정부24 공식 작성예시',example],['공식 신청서 사진','https://www.gov.kr/images/06/xml_sample/1310000001501.gif']]);
+  replace('login',{region:'national',url:gov},[
+    screen('gov-login-home.jpg','오른쪽 위 ‘로그인’을 누르세요',[p(79,9,10,8,'로그인')]),auth()
+  ],[['정부24 로그인 메뉴',gov]]);
+  replace('welfare',{region:'national',url:'https://www.bokjiro.go.kr/'},[
+    screen('welfare-home.jpg','검색창에 ‘기초연금’을 적고 돋보기를 누르세요',[p(28.8,31,47.5,12,'복지 검색창'),p(70,30.5,6,12.5,'검색 버튼')]),
+    screen('welfare-result.jpg','검색 결과의 ‘기초연금’을 누르세요',[p(7,83,10,7,'기초연금 검색 결과')]),
+    screen('welfare-support.jpg','‘지원대상’을 확인하고 ‘신청방법’을 누르세요',[p(5,44,24.5,10,'지원대상'),p(52,44,25,10,'신청방법')]),
+    screen('welfare-apply.jpg','신청방법과 처리절차를 읽으세요',[p(52,44,25,10,'신청방법')])
+  ],[['복지로 공식 홈페이지','https://www.bokjiro.go.kr/'],['복지로 기초연금 상세 안내','https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00001164']]);
+  const center='https://www.sdm.go.kr/dong/sc/index.do';
+  replace('center',{region:'seoul',title:'주민센터 위치 찾기 · 신촌동 예시',url:center},[
+    screen('center-home.jpg','‘오시는길’을 누르세요',[p(3,41.5,11,15,'오시는길')],1426,891),
+    screen('center-map.jpg','주소와 전화번호를 확인하세요',[p(27,58,24,8,'주소와 전화번호')],1426,891)
+  ],[['신촌동 주민센터',center],['신촌동 청사와 위치','https://www.sdm.go.kr/dong/sc/citizen/dongInfo.do']]);
+  replace('programs',{region:'seoul',title:'주민센터 강좌 찾기 · 신촌동 예시',url:center},[
+    screen('program-home.jpg','‘프로그램’을 누르세요',[p(13.2,41.5,11,15,'프로그램')],1426,891),
+    screen('program-list.jpg','원하는 강좌 이름을 누르세요',[p(44.5,80,17,5.5,'강좌 이름')],1426,891),
+    screen('program-detail.jpg','교육시간과 접수 방법을 확인하세요',[p(34.5,47,27,8,'교육시간'),p(34.5,65.5,27,8,'방문접수')],1426,891)
+  ],[['신촌동 주민센터',center],['자치회관 강좌안내','https://www.sdm.go.kr/dong/sc/acms/com/lecture.do']]);
+  replace('health',{region:'seoul',title:'보건소 이용 방법 · 서대문구 예시',url:center},[
+    screen('health-home.jpg','홈페이지 맨 위의 ‘보건소’를 누르세요',[p(64,0.2,6.2,5,'보건소')],1426,891),
+    screen('health-services.jpg','‘진료 및 검사’ 또는 ‘민원안내’를 누르세요',[p(25,13.5,18.6,8.3,'진료 및 검사'),p(42.3,13.5,18.6,8.3,'민원안내')],1426,891)
+  ],[['신촌동 주민센터',center],['서대문구 보건소','https://www.sdm.go.kr/health/']]);
+  const basics=D.guides.find(g=>g.id==='basics');
+  basics.steps[0].body='마우스 왼쪽 버튼이나 손가락으로 원하는 버튼을 한 번 누르세요.';
+  basics.steps[1].body='안내 목록의 검색창에 지역이나 기관 이름을 적으면 해당 안내를 찾을 수 있습니다.';
+  basics.steps[3].body='이 사이트 위쪽의 ‘안내 목록’을 누르면 처음부터 다른 안내를 고를 수 있습니다.';
+})();

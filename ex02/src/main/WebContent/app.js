@@ -11,8 +11,7 @@
   let regionId = String(read('region',''));
   let saved = safeIds(read('saved',[]));
   let completed = safeIds(read('completed',[]));
-  let progress = read('progress',{});
-  if (!progress || typeof progress !== 'object' || Array.isArray(progress)) progress = {};
+  let progress = {};
   let category = 'all', query = '', speaking = false, finish = false, photoRegion = 'all';
   let chatRegion='', chatChoice=null, chatStep=0;
   const paths = {
@@ -48,6 +47,7 @@
   }
   function navigate(values, hash='') {
     stopSpeech(); finish=false;
+    progress={};chatRegion='';chatChoice=null;chatStep=0;
     const url = new URL('index.html',location.href);
     Object.entries(values).forEach(([k,v])=>{if(v) url.searchParams.set(k,v);});
     url.hash=hash; history.pushState({},'',url); render();
@@ -66,11 +66,11 @@
     return '<div class="hero-actions"><button class="button" data-action="page-in">화면 확대 +</button><button class="button secondary" data-action="magnify">돋보기</button></div>';
   }
   function header() {
-    return `<header class="header"><div class="container header-inner">${brand()}<nav class="simple-nav" aria-label="주 메뉴"><a href="index.html" data-nav="chat">대화로 찾기</a><a href="index.html?view=list" data-nav="list">안내 목록</a></nav></div></header>`;
+    return `<header class="header"><div class="container header-inner">${brand()}<nav class="simple-nav" aria-label="주 메뉴"><a href="index.html" data-nav="chat">지역찾기</a><a href="index.html?view=list" data-nav="list">안내 목록</a></nav></div></header>`;
   }
   function footer() { return ''; }
   function choicesFor(id) {
-    const common=[{label:'일자리 찾기',guide:'jobs',step:0}];
+    const common=[{label:'일자리 찾기',guide:'jobs',step:0},{label:'정부24 등본 발급',guide:'documents',step:0},{label:'복지혜택 찾기',guide:'welfare',step:0}];
     const choices={
       seoul:[{label:'복지센터 이용',guide:'seoul-welfare',step:0},{label:'보건소 찾기',guide:'seoul-health',step:0},{label:'상담센터 위치',guide:'seoul-location',step:0}],
       busan:[{label:'복지관 이용',guide:'busan-welfare',step:0},{label:'보건소 찾기',guide:'busan-health',step:0},{label:'운동 프로그램',guide:'busan-location',step:0},{label:'복지관 가는 길',guide:'busan-welfare',step:2}],
@@ -81,16 +81,15 @@
   }
   function official(g) {
     if(!g.url)return '';
-    const url=['center','health','programs'].includes(g.id)?region()?.url||g.url:g.url;
-    return link(url,'공식 사이트 열기','button official-large');
+    return link(g.url,'공식 사이트 열기','button official-large');
   }
   function chatHome() {
     const g=chatChoice?D.guides.find(g=>g.id===chatChoice.guide):null;
     const label=D.regions.find(r=>r.id===chatRegion)?.short||'';
-    return `<main id="main" class="container chat-home" tabindex="-1"><section id="learn" class="chat-stage">
-    ${!chatRegion?`<div class="chat-question"><h1>어느 지역인가요?</h1></div><div class="chat-choices" aria-label="지역 선택">${[['seoul','서울'],['busan','부산'],['daegu','대구'],['gjcity','경기 광주']].map(([id,name])=>`<button data-chat-region="${id}">${name}</button>`).join('')}</div>`:
-    `<div class="chat-answer"><strong>${label}${chatChoice?' · '+chatChoice.label:''}</strong><button data-action="chat-region-reset">지역 변경</button>${chatChoice?'<button data-action="chat-service-reset">다시 선택</button>':''}</div>${!chatChoice?`<div class="chat-question"><h1>무엇을 이용하시겠어요?</h1></div><div class="chat-choices" aria-label="이용할 항목">${choicesFor(chatRegion).map((c,i)=>`<button data-chat-choice="${i}">${c.label}</button>`).join('')}</div>`:`<section id="chat-result" class="chat-result" tabindex="-1"><h1 class="chat-guide-title">${g.title}</h1><div id="step-panel" class="step-panel" tabindex="-1">${stepContent(g,chatStep,true)}</div>${official(g)}</section>`}`}
-    </section></main>`;
+    const answer=`<div class="chat-answer"><strong>${label}${chatChoice?' · '+chatChoice.label:''}</strong><button data-action="chat-region-reset">지역 변경</button>${chatChoice?'<button data-action="chat-service-reset">다시 선택</button>':''}</div>`;
+    const content=chatChoice?`${answer}<section id="chat-result" class="chat-result" tabindex="-1"><h1 class="chat-guide-title">${g.title}</h1><div id="step-panel" class="step-panel" tabindex="-1">${stepContent(g,chatStep,true)}</div>${official(g)}</section>`:
+      `<div class="chat-question"><h1 tabindex="-1">${chatRegion?'무엇을 이용하시겠어요?':'어느 지역인가요?'}</h1></div><div class="chat-choices" aria-label="${chatRegion?'이용할 항목':'지역 선택'}">${chatRegion?choicesFor(chatRegion).map((c,i)=>`<button data-chat-choice="${i}">${c.label}</button>`).join(''):[['seoul','서울'],['busan','부산'],['daegu','대구'],['gjcity','경기 광주']].map(([id,name])=>`<button data-chat-region="${id}">${name}</button>`).join('')}</div>${chatRegion?answer:''}`;
+    return `<main id="main" class="container chat-home" tabindex="-1"><section id="learn" class="chat-stage">${content}</section></main>`;
   }
   function home() {
     if(route().view==='chat')return chatHome();
@@ -115,21 +114,14 @@
     return `<main id="main" class="container lesson-container simple-lesson" tabindex="-1"><div class="lesson-title-row"><a class="button secondary" href="index.html?view=list" data-nav="list">${icon('back')}목록</a><h1>${g.title}</h1></div><section class="step-panel" id="step-panel" tabindex="-1">${stepContent(g,stepIndex(g))}</section>${official(g)}<div class="print-all">${g.steps.map((s,i)=>`<section class="print-step"><h2>${s.title}</h2>${s.image?'<img src="'+s.image+'" alt="'+escape(s.title)+'">':'<p>'+s.body+'</p>'}</section>`).join('')}</div></main>`;
   }
   function photoMarkup(s) {
-    return `<figure class="photo-frame"><div class="photo-viewport"><div class="photo-canvas"><img src="${s.image}" width="1280" height="720" draggable="false" alt="${escape(s.title)}">${s.points.map((p,i)=>`<button class="photo-target" data-photo-point="${i+1}" style="left:${p.x}%;top:${p.y}%;width:${p.w}%;height:${p.h}%" aria-label="${i+1}번 ${escape(p.label)}"><span>${i+1}</span></button>`).join('')}</div></div></figure>`;
+    const crop=s.crop;
+    const frameStyle=crop?` style="aspect-ratio:${s.width}/${s.height*crop.height};overflow:hidden"`:'';
+    const imageStyle=crop?` style="position:absolute;left:0;top:${-crop.top/crop.height*100}%;width:100%;height:auto"`:'';
+    return `<figure class="photo-frame"><div class="photo-viewport"><div class="photo-canvas"${frameStyle}><img src="${s.image}" width="${s.width||1280}" height="${s.height||720}"${imageStyle} draggable="false" alt="${escape(s.title)}">${(s.points||[]).map(p=>`<span class="photo-target" style="left:${p.x}%;top:${crop?(p.y-crop.top*100)/crop.height:p.y}%;width:${p.w}%;height:${crop?p.h/crop.height:p.h}%" aria-hidden="true"></span>`).join('')}</div></div></figure>`;
   }
   function stepContent(g,n,chat=false) {
     const s=g.steps[n];
-    return `<h2>${s.title}</h2>${s.image?photoMarkup(s):'<p class="step-body">'+s.body+'</p>'+mock(s)}${g.steps.length>1?`<div class="step-actions"><button class="button secondary" ${chat?'data-chat-step':'data-step'}="${n-1}" ${n===0?'disabled':''}>${icon('back')}${g.photo?'이전 사진':'이전'}</button><button class="button" ${chat?'data-chat-step':'data-step'}="${n+1}" ${n===g.steps.length-1?'disabled':''}>${g.photo?'다음 사진':'다음'}${icon('arrow')}</button></div>`:''}`;
-  }
-  function mock(s) {
-    let inner='';
-    if(s.mock==='search') inner=`<p><label for="practice-input">검색어를 입력하고 검색해 보세요.</label></p><form id="practice-search" class="mock-input-row"><input id="practice-input" type="search" maxlength="60" placeholder="${escape(s.query)}" autocomplete="off" required><button class="button small" type="submit">${icon('search')}검색</button></form><p class="mock-hint">예: ${s.query} · 이름, 주민등록번호 등 개인정보는 입력하지 마세요.</p>`;
-    else if(s.mock==='region')inner=`<p>지역을 고른 다음 공식 누리집을 열어보세요.</p><div class="local-actions"><button class="button small" data-action="region">${icon('pin')}${region()?escape(region().name):'내 지역 선택'}</button>${link(region()?.url||'https://www.gov.kr/portal/orgSite',region()?'지역 누리집 열기':'공식 누리집 찾기','button secondary small')}</div>`;
-    else if(s.mock==='address')inner=`<div class="mock-address">${icon('lock')}<strong>${escape(s.label)}</strong>${icon('check')}</div><p class="mock-hint">인터넷 창 위쪽의 주소를 확인하는 연습이에요.</p>`;
-    else if(s.mock==='zoom')inner=`<p>이 버튼으로도 화면 크기를 바꿀 수 있어요.</p>${zoomControls()}`;
-    else if(s.mock==='scroll')inner='<div class="mock-scroll" tabindex="0" aria-label="위아래로 움직이기 연습"><p>마우스 바퀴를 돌리거나 손가락으로 밀어보세요.</p><p>천천히 아래로 내려가요.</p><p>주민센터 이용법도 차근차근 배워요.</p><p>복지정보도 스스로 찾아볼 수 있어요.</p><p>끝까지 잘 내려오셨어요!</p></div>';
-    else inner=`<button class="mock-link" data-action="practice">${icon(s.mock==='check'?'check':s.mock==='click'?'mouse':'document')}<span>${escape(s.label)}</span>${icon('arrow')}</button>`;
-    return `<div class="mock"><div class="mock-chrome"><i></i><i></i><i></i><span>따라 해 보는 화면 · 실제 신청은 이루어지지 않아요</span></div><div class="mock-content">${inner}<div class="practice-feedback" id="practice-feedback" role="status" aria-live="polite"></div></div></div>`;
+    return `<h2>${s.title}</h2>${s.image?photoMarkup(s):'<p class="step-body">'+s.body+'</p>'}${g.steps.length>1?`<div class="step-actions"><button class="button secondary" ${chat?'data-chat-step':'data-step'}="${n-1}" ${n===0?'disabled':''}>${icon('back')}${g.photo?'이전 사진':'이전'}</button><button class="button" ${chat?'data-chat-step':'data-step'}="${n+1}" ${n===g.steps.length-1?'disabled':''}>${g.photo?'다음 사진':'다음'}${icon('arrow')}</button></div>`:''}`;
   }
   function completion(g) {
     return `<div class="completion">${icon('circleCheck')}<div class="eyebrow" style="justify-content:center">학습 완료</div><h2>안내를 모두 확인했습니다.</h2><p>‘${g.title}’ 안내를 끝까지 살펴보셨어요.<br>필요할 때 언제든 다시 연습해 보세요.</p><div class="hero-actions"><a class="button" href="index.html#learn">다른 안내 배우기${icon('arrow')}</a><button class="button secondary" data-action="restart">다시 연습하기</button></div></div>`;
@@ -171,7 +163,7 @@
   }
   function updateStep(n) {
     const g=route().guide;if(!g||n<0||n>=g.steps.length)return;
-    progress[g.id]=n;write('progress',progress);write('lastGuide',g.id);finish=false;render();
+    progress[g.id]=n;finish=false;render();
     const panel=document.getElementById('step-panel');panel?.focus({preventScroll:true});panel?.scrollIntoView({block:'start',behavior:'instant'});
   }
   app.addEventListener('click',event=>{
@@ -207,7 +199,6 @@
       case 'show-all':category='all';query='';photoRegion='all';if(route().view==='saved'){navigate({},'learn');return;}document.getElementById('search-input').value='';renderCards();return;
       case 'speak':speak();return;
       case 'print':window.print();return;
-      case 'practice':document.getElementById('practice-feedback').textContent='잘 누르셨어요! 실제 사이트에서도 이렇게 한 번 누르면 돼요.';return;
       case 'restart':updateStep(0);return;
       case 'finish':{const g=route().guide;if(!g)return;if(!completed.includes(g.id)){completed.push(g.id);write('completed',completed);}finish=true;render();document.getElementById('step-panel').focus();announce('안내를 모두 확인했습니다.');return;}
     }
@@ -222,10 +213,9 @@
   });
   app.addEventListener('submit',event=>{
     if(event.target.id==='guide-search'){event.preventDefault();query=document.getElementById('search-input').value.slice(0,100);renderCards();}
-    if(event.target.id==='practice-search'){event.preventDefault();const value=document.getElementById('practice-input').value.trim();if(!value)return;document.getElementById('practice-feedback').textContent='검색 버튼을 잘 누르셨어요! 실제 홈페이지에서는 관련 결과가 나타나요.';}
   });
   app.addEventListener('input',event=>{if(event.target.id==='search-input'){query=event.target.value.slice(0,100);renderCards();}});
-  window.addEventListener('popstate',()=>{finish=false;category='all';query='';render();});
+  window.addEventListener('popstate',()=>{finish=false;progress={};chatRegion='';chatChoice=null;chatStep=0;category='all';query='';render();});
   window.addEventListener('pagehide',stopSpeech);
   // Original links remain usable; Gwangju in the original repository was Gyeonggi Gwangju.
   const filename=decodeURIComponent(location.pathname.split('/').pop()||'');

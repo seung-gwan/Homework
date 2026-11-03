@@ -11,11 +11,16 @@ const d=sandbox.window.APPLE_TREE;
 assert.equal(d.guides.length,21);
 assert.equal(new Set(d.guides.map(g=>g.id)).size,d.guides.length);
 for(const g of d.guides){
+  if(g.url)assert.ok(g.photo&&g.steps.every(s=>s.image),g.id+': external guide must use real screenshots');
   assert.ok(d.categories.some(c=>c.id===g.category),g.id+': invalid category');
   assert.ok(g.steps.length>=1,g.id+': incomplete guide');
   for(const s of g.steps){
     assert.ok(s.title&&s.body&&s.tip&&(s.mock||s.image),g.id+': incomplete step');
     if(s.image)assert.ok(fs.existsSync(path.join(root,s.image)),g.id+': missing screenshot');
+    if(s.crop){
+      assert.ok(s.width>0&&s.height>0&&s.crop.top>=0&&s.crop.height>0&&s.crop.top+s.crop.height<=1,g.id+': invalid photo crop');
+      for(const p of s.points||[])assert.ok(p.y>=s.crop.top*100&&p.y+p.h<=(s.crop.top+s.crop.height)*100,g.id+': marker outside visible photo');
+    }
     for(const p of s.points||[])assert.ok(p.x>=0&&p.y>=0&&p.x+p.w<=100&&p.y+p.h<=100,g.id+': invalid marked location');
   }
   for(const [,url]of g.sources)assert.equal(new URL(url).protocol,'https:');
@@ -23,7 +28,8 @@ for(const g of d.guides){
 new vm.Script(fs.readFileSync(path.join(root,'app.js'),'utf8'));
 new vm.Script(fs.readFileSync(path.join(root,'view-tools.js'),'utf8'));
 const screenshots=new Set(d.guides.flatMap(g=>g.steps.map(s=>s.image).filter(Boolean)));
-assert.equal(screenshots.size,30,'all original instructional screenshots must be included');
+assert.equal([...screenshots].filter(s=>s.endsWith('.png')).length,30,'all original instructional screenshots must be included');
+assert.ok(screenshots.size>=47,'official website captures must be included');
 const html=fs.readdirSync(root).filter(f=>f.endsWith('.html'));
 for(const f of html){
   const s=fs.readFileSync(path.join(root,f),'utf8');

@@ -14,6 +14,7 @@
   let progress = read('progress',{});
   if (!progress || typeof progress !== 'object' || Array.isArray(progress)) progress = {};
   let category = 'all', query = '', speaking = false, finish = false, photoRegion = 'all';
+  let chatRegion='', chatChoice=null, chatStep=0;
   const paths = {
     arrow:'M5 12h14m-5-5 5 5-5 5', back:'M19 12H5m5-5-5 5 5 5', up:'m6 14 6-6 6 6',
     building:'M4 21V8l8-5 8 5v13M2 21h20M9 21v-5h6v5M8 9h1m6 0h1M8 12h1m6 0h1',
@@ -40,10 +41,10 @@
   const region = () => D.regions.find(r => r.id === regionId);
   const announce = msg => { const el = document.getElementById('announcement'); if (el) { el.textContent=''; requestAnimationFrame(()=>{el.textContent=msg;}); } };
   const link = (url, text, classes='text-link') => `<a class="${classes}" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-label="${escape(text)} (새 창)">${text}${icon('external')}</a>`;
-  const brand = () => '<a class="brand" href="index.html" aria-label="사과나무 처음 화면"><img src="assets/favicon.svg" alt="" width="45" height="45"><span><span class="brand-name">사과나무</span><span class="brand-sub">쉬운 디지털 생활 안내</span></span></a>';
+  const brand = () => '<a class="brand" href="index.html" aria-label="사과나무 처음 화면"><img src="assets/favicon.svg" alt="" width="45" height="45"><span class="brand-name">사과나무</span></a>';
   function route() {
     const p = new URLSearchParams(location.search);
-    return {guide:D.guides.find(g=>g.id===p.get('guide')),view:p.get('view')==='saved'?'saved':'all'};
+    return {guide:D.guides.find(g=>g.id===p.get('guide')),view:['saved','list'].includes(p.get('view'))?p.get('view'):'chat'};
   }
   function navigate(values, hash='') {
     stopSpeech(); finish=false;
@@ -51,7 +52,7 @@
     Object.entries(values).forEach(([k,v])=>{if(v) url.searchParams.set(k,v);});
     url.hash=hash; history.pushState({},'',url); render();
     if (hash) document.getElementById(hash)?.scrollIntoView();
-    else {window.scrollTo({top:0,behavior:'instant'});document.getElementById('main')?.focus({preventScroll:true});}
+    else {window.scrollTo({top:0,left:0,behavior:'instant'});document.getElementById('main')?.focus({preventScroll:true});}
   }
   function applyPreferences() {
     // The reading layout stays fixed. Magnification happens in a separate lens or photo viewport.
@@ -62,44 +63,48 @@
     window.AppleTreeView?.refresh();
   }
   function zoomControls() {
-    return '<button class="button secondary" data-action="magnify">'+icon('search')+'돋보기 켜기</button>';
+    return '<div class="hero-actions"><button class="button" data-action="page-in">화면 확대 +</button><button class="button secondary" data-action="magnify">돋보기</button></div>';
   }
   function header() {
-    const r=route();
-    return `<div class="access-bar"><div class="container access-inner"><span>실제 화면으로 배우는 웹사이트 이용안내</span><div class="access-controls"><button data-action="contrast" aria-pressed="${contrast}">${icon('contrast')}또렷한 화면</button><button data-action="help">${icon('help')}사용 도움말</button></div></div></div>
-    <header class="header"><div class="container header-inner">${brand()}<p class="header-description">복지관 · 보건소 · 일자리<br><strong>인터넷 사용 방법을 알려드립니다.</strong></p><button class="button secondary" data-action="magnify">${icon('search')}돋보기 사용</button></div><div class="nav-bar"><nav class="container main-nav" aria-label="주 메뉴"><a href="index.html#learn" data-nav="learn" class="${!r.guide&&r.view==='all'?'active':''}">사진으로 배우기</a><a href="index.html#local" data-nav="local">지역 홈페이지 찾기</a><a href="index.html?view=saved" data-nav="saved" class="${r.view==='saved'?'active':''}">저장한 안내<span data-save-count>${saved.length?' ('+saved.length+')':''}</span></a><a href="index.html?guide=basics">인터넷 기초</a></nav></div></header>`;
+    return `<header class="header"><div class="container header-inner">${brand()}<nav class="simple-nav" aria-label="주 메뉴"><a href="index.html" data-nav="chat">대화로 찾기</a><a href="index.html?view=list" data-nav="list">안내 목록</a></nav></div></header>`;
   }
-  function footer() {
-    return `<footer class="footer"><div class="container footer-top">${brand()}<p>안내 사진의 표시와 설명을 보며 실제 사이트를 이용해 보세요.<br>사진과 현재 홈페이지의 화면은 다를 수 있습니다.</p><button class="back-top" data-action="top">맨 위로${icon('up')}</button></div><div class="container footer-bottom"><span>사과나무 · 웹사이트 이용안내</span><button data-action="sources">안내 출처·이용 안내</button><button data-action="help">도움말</button></div></footer>`;
+  function footer() { return ''; }
+  function choicesFor(id) {
+    const common=[{label:'일자리 찾기',guide:'jobs',step:0}];
+    const choices={
+      seoul:[{label:'복지센터 이용',guide:'seoul-welfare',step:0},{label:'보건소 찾기',guide:'seoul-health',step:0},{label:'상담센터 위치',guide:'seoul-location',step:0}],
+      busan:[{label:'복지관 이용',guide:'busan-welfare',step:0},{label:'보건소 찾기',guide:'busan-health',step:0},{label:'운동 프로그램',guide:'busan-location',step:0},{label:'복지관 가는 길',guide:'busan-welfare',step:2}],
+      daegu:[{label:'복지관 이용',guide:'daegu-welfare',step:0},{label:'강좌 시간표',guide:'daegu-welfare',step:1},{label:'보건소 찾기',guide:'daegu-health',step:0},{label:'건강·운동시설',guide:'daegu-location',step:0},{label:'복지관 가는 길',guide:'daegu-location',step:1}],
+      gjcity:[{label:'복지관 이용',guide:'gjcity-welfare',step:0},{label:'보건진료소 찾기',guide:'gjcity-health',step:0},{label:'운동시설',guide:'gjcity-location',step:1},{label:'복지관 가는 길',guide:'gjcity-welfare',step:2}]
+    };
+    return [...(choices[id]||[]),...common];
+  }
+  function official(g) {
+    if(!g.url)return '';
+    const url=['center','health','programs'].includes(g.id)?region()?.url||g.url:g.url;
+    return link(url,'공식 사이트 열기','button official-large');
+  }
+  function chatHome() {
+    const g=chatChoice?D.guides.find(g=>g.id===chatChoice.guide):null;
+    const label=D.regions.find(r=>r.id===chatRegion)?.short||'';
+    return `<main id="main" class="container chat-home" tabindex="-1"><section id="learn" class="chat-stage">
+    ${!chatRegion?`<div class="chat-question"><h1>어느 지역인가요?</h1></div><div class="chat-choices" aria-label="지역 선택">${[['seoul','서울'],['busan','부산'],['daegu','대구'],['gjcity','경기 광주']].map(([id,name])=>`<button data-chat-region="${id}">${name}</button>`).join('')}</div>`:
+    `<div class="chat-answer"><strong>${label}${chatChoice?' · '+chatChoice.label:''}</strong><button data-action="chat-region-reset">지역 변경</button>${chatChoice?'<button data-action="chat-service-reset">다시 선택</button>':''}</div>${!chatChoice?`<div class="chat-question"><h1>무엇을 이용하시겠어요?</h1></div><div class="chat-choices" aria-label="이용할 항목">${choicesFor(chatRegion).map((c,i)=>`<button data-chat-choice="${i}">${c.label}</button>`).join('')}</div>`:`<section id="chat-result" class="chat-result" tabindex="-1"><h1 class="chat-guide-title">${g.title}</h1><div id="step-panel" class="step-panel" tabindex="-1">${stepContent(g,chatStep,true)}</div>${official(g)}</section>`}`}
+    </section></main>`;
   }
   function home() {
-    const isSaved=route().view==='saved';
-    const latestId=read('lastGuide','');
-    const latest=D.guides.find(g=>g.id===latestId&&!completed.includes(g.id)&&Number.isInteger(progress[g.id]));
-    const param=new URLSearchParams(location.search).get('category');
-    if(param&&D.categories.some(c=>c.id===param))category=param;
-    return `<main id="main" tabindex="-1">
-    ${!isSaved?`<section class="container hero" aria-labelledby="hero-title"><div class="hero-copy"><p class="hero-label">사과나무 이용안내</p><h1 id="hero-title">어디를 눌러야 할지,<br>사진으로 확인하세요.</h1><p>복지관 이용, 보건소 찾기, 일자리 검색.<br>실제 홈페이지 사진에 누를 곳을 표시했습니다.</p><div class="hero-actions"><a class="button" href="#learn">안내 사진 찾기${icon('arrow')}</a><a class="text-link" href="index.html?guide=basics">인터넷이 처음이라면${icon('arrow')}</a></div><p class="hero-footnote">글씨가 작을 때는 오른쪽 아래 돋보기를 사용하세요.</p></div><a class="hero-photo" href="index.html?guide=seoul-welfare"><div class="hero-photo-label">이런 화면을 보며 따라 해요</div><img src="assets/screens/kGhXsGfd.png" width="1280" height="720" alt="서울노인복지센터 실제 홈페이지. 노인복지 메뉴에 빨간 원이 표시되어 있습니다."><span>서울노인복지센터 이용안내 보기${icon('arrow')}</span></a></section>
-    <div class="container service-menu" aria-label="자주 찾는 안내">${D.categories.filter(c=>c.id!=='all').map(c=>`<button data-category="${c.id}" data-jump-learn>${icon(c.icon)}<strong>${c.name}</strong>${icon('arrow')}</button>`).join('')}</div>`:''}
-    <section id="learn" class="container learn-section" aria-labelledby="learn-title"><div class="section-top"><div><h2 id="learn-title">${isSaved?'저장한 안내':'필요한 이용 방법을 찾아보세요'}</h2><p>${isSaved?'책갈피로 저장한 안내를 다시 볼 수 있습니다.':'지역과 이용하려는 내용을 고른 뒤 사진을 열어보세요.'}</p></div><span class="photo-count">실제 안내 사진 <strong>30장</strong></span></div>
-    ${latest&&!isSaved?`<div class="continue-banner"><span><strong>이어서 보기</strong> · ${latest.title}</span><a class="text-link" href="index.html?guide=${latest.id}">${Math.min(progress[latest.id]+1,latest.steps.length)}단계부터${icon('arrow')}</a></div>`:''}
-    <form class="search-form" id="guide-search" role="search"><label class="sr-only" for="search-input">배우고 싶은 내용 검색</label><input id="search-input" type="search" maxlength="100" value="${escape(query)}" placeholder="지역, 기관 이름 또는 이용 방법을 입력하세요"><button class="button" type="submit">${icon('search')}검색</button></form>
-    <div class="region-tabs" aria-label="사진 안내 지역"><span>사진 안내 지역</span>${[['all','전체'],['seoul','서울'],['busan','부산'],['daegu','대구'],['gjcity','경기 광주']].map(([id,name])=>`<button data-photo-region="${id}" aria-pressed="${photoRegion===id}">${name}</button>`).join('')}</div>
-    <div class="category-list" aria-label="안내 주제">${D.categories.map(c=>`<button class="category-button" data-category="${c.id}" aria-pressed="${category===c.id}">${c.name}</button>`).join('')}</div>
-    <div class="result-line"><span id="result-count" role="status" aria-live="polite"></span><span>사진을 누르면 단계별 설명이 나옵니다.</span></div><div id="guide-grid" class="guide-grid"></div></section>
-    ${!isSaved?`<section id="local" class="container local-section"><div>${icon('building')}<h2>다른 지역의 홈페이지도 찾을 수 있어요</h2><p>사진 안내는 서울·부산·대구·경기 광주를 제공합니다.<br>다른 지역은 공식 홈페이지에서 이용 정보를 찾아보세요.</p></div><div class="local-actions"><button class="button" data-action="region">${icon('pin')}${region()?escape(region().name):'지역 선택'}</button>${link(region()?.url||'https://www.gov.kr/portal/orgSite',region()?'지역 홈페이지 열기':'공식 홈페이지 찾기','button secondary')}</div></section><section class="container first-section"><div class="section-top"><h2>자주 묻는 질문</h2><button class="text-link" data-action="help">사용 도움말${icon('arrow')}</button></div><div class="faq-list">${faqs()}</div></section>`:''}
-    </main>`;
+    if(route().view==='chat')return chatHome();
+    return `<main id="main" class="container simple-home" tabindex="-1"><section id="learn" aria-labelledby="learn-title"><h1 id="learn-title">안내 목록</h1><form class="search-form" id="guide-search" role="search"><label class="sr-only" for="search-input">배우고 싶은 내용 검색</label><input id="search-input" type="search" maxlength="100" value="${escape(query)}" placeholder="지역 · 기관 이름"><button class="button" type="submit">검색</button></form><div class="region-tabs" aria-label="지역">${[['all','전체'],['seoul','서울'],['busan','부산'],['daegu','대구'],['gjcity','경기 광주']].map(([id,name])=>`<button data-photo-region="${id}" aria-pressed="${photoRegion===id}">${name}</button>`).join('')}</div><div class="category-list" aria-label="안내 주제">${D.categories.map(c=>`<button class="category-button" data-category="${c.id}" aria-pressed="${category===c.id}">${c.name}</button>`).join('')}</div><span class="sr-only" id="result-count" role="status"></span><div id="guide-grid" class="guide-grid"></div></section></main>`;
   }
   function faqs() {
     return '<details><summary>확대하면 보던 위치가 바뀌나요?</summary><p>돋보기는 페이지 위에 확대된 부분만 보여줍니다. 글자 크기와 본문 배치를 바꾸지 않아요. 사진 확대도 사진 안에서만 이루어집니다.</p></details><details><summary>사진 안의 번호는 무엇인가요?</summary><p>실제 홈페이지에서 눌러야 할 위치입니다. 번호 표시를 누르면 메뉴 이름을 확인할 수 있어요. 실제 서비스 이용은 공식 홈페이지를 열어 진행하세요.</p></details><details><summary>사진을 더 크게 보고 싶어요.</summary><p>사진 위의 + 버튼이나 크게 열기를 누르세요. 커진 사진은 마우스로 끌거나 손가락으로 밀어 움직일 수 있어요.</p></details><details><summary>사진과 실제 홈페이지가 달라요.</summary><p>기존에 올려주신 사진을 기준으로 설명합니다. 홈페이지가 개편되면 메뉴 이름과 위치가 달라질 수 있어요. 현재 홈페이지의 비슷한 이름의 메뉴를 찾아보세요.</p></details>';
   }
   function renderCards() {
     const grid=document.getElementById('guide-grid');if(!grid)return;
-    const isSaved=route().view==='saved';
     const words=query.trim().toLocaleLowerCase('ko').split(/\s+/).filter(Boolean);
-    const guides=D.guides.filter(g=>(category==='all'||g.category===category)&&(!isSaved||saved.includes(g.id))&&(photoRegion==='all'||!g.photo||g.region===photoRegion||g.region==='national')&&words.every(w=>(g.title+' '+g.description+' '+g.keywords).toLocaleLowerCase('ko').includes(w)));
-    document.getElementById('result-count').innerHTML='안내 <strong>'+guides.length+'개</strong>';
-    grid.innerHTML=guides.length?guides.map(g=>`<article class="guide-card ${g.photo?'photo-card':'text-card'}"><a class="card-main" href="index.html?guide=${g.id}">${g.photo?`<img class="card-thumbnail" src="${g.steps[0].image}" width="320" height="180" loading="lazy" alt="${escape(g.site)} 안내 사진">`:`<span class="card-icon">${icon(g.icon)}</span>`}<div><span class="card-site">${g.photo?(g.region==='national'?'전국':D.regions.find(r=>r.id===g.region)?.short)+' · '+g.site:'기초 이용안내'}</span><h3>${g.title}</h3><p>${g.photo?'사진 '+g.steps.length+'장으로 따라보기':g.description}</p></div></a><div class="card-footer"><span class="card-meta">${completed.includes(g.id)?'✓ 배운 안내':g.photo?'실제 화면 안내':'글과 연습으로 배우기'}</span><a class="card-start" href="index.html?guide=${g.id}" aria-label="${g.title} 보기">안내 보기${icon('arrow')}</a><button class="bookmark" data-save="${g.id}" aria-pressed="${saved.includes(g.id)}" aria-label="${g.title} ${saved.includes(g.id)?'저장 취소':'저장'}">${icon('bookmark')}</button></div></article>`).join(''):'<div class="empty-state"><h3>해당하는 안내가 없습니다.</h3><p>검색어 또는 지역을 바꾸거나 전체 안내를 확인해 주세요.</p><button class="button secondary" data-action="show-all">전체 안내 보기</button></div>';
+    const guides=D.guides.filter(g=>(category==='all'||g.category===category)&&(route().view!=='saved'||saved.includes(g.id))&&(photoRegion==='all'||!g.photo||g.region===photoRegion||g.region==='national')&&words.every(w=>(g.title+' '+g.keywords).toLocaleLowerCase('ko').includes(w)));
+    document.getElementById('result-count').textContent=guides.length+'개';
+    grid.innerHTML=guides.map(g=>`<article class="guide-card"><a class="card-main" href="index.html?guide=${g.id}">${g.photo?`<img class="card-thumbnail" src="${g.steps[0].image}" width="320" height="180" loading="lazy" alt="">`:`<span class="card-icon">${icon(g.icon)}</span>`}<h2>${g.title}</h2>${icon('arrow')}</a></article>`).join('')||'<p class="empty-state">해당하는 안내가 없습니다.</p>';
     document.querySelectorAll('[data-category]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.category===category)));
     document.querySelectorAll('[data-photo-region]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.photoRegion===photoRegion)));
     window.AppleTreeView?.refresh();
@@ -107,18 +112,14 @@
   function stepIndex(g) {const n=progress[g.id];return Number.isInteger(n)?Math.max(0,Math.min(g.steps.length-1,n)):0;}
   function lesson(g) {
     document.title=g.title+' | 사과나무';
-    const n=stepIndex(g);
-    return `<main id="main" class="container lesson-container" tabindex="-1"><div class="breadcrumb"><a href="index.html#learn">안내 목록</a>${icon('arrow')}<span>${D.categories.find(c=>c.id===g.category).name}</span></div><header class="lesson-heading"><span class="pill">${g.level}</span><h1>${g.title}</h1><p>${g.description}</p><div class="lesson-meta"><span>${icon('clock')}약 ${g.minutes}분</span><span>${g.steps.length}단계 안내</span><span>${completed.includes(g.id)?'✓ 학습 완료':'내 속도대로 천천히'}</span></div></header><div class="lesson-tools"><button class="button secondary small" data-action="speak" aria-pressed="false">${icon('volume')}읽어주기</button><button class="button secondary small" data-save="${g.id}" aria-pressed="${saved.includes(g.id)}">${icon('bookmark')}${saved.includes(g.id)?'저장했어요':'안내 저장'}</button><button class="button secondary small" data-action="print">${icon('print')}전체 안내 인쇄</button><button class="button secondary small" data-action="region">${icon('pin')}${region()?escape(region().short):'내 지역 선택'}</button></div>${g.photo?'<aside class="photo-notice">올려주신 안내 사진을 기준으로 설명합니다. 현재 홈페이지의 화면은 달라질 수 있습니다.</aside>':'<div class="prepare">'+icon('light')+'<div><strong>시작 전에 준비해요</strong><p>'+g.prepare+'</p></div></div>'}<div class="lesson-layout"><aside class="lesson-sidebar" aria-label="학습 순서"><h2>이렇게 따라가요</h2><ol class="step-list">${g.steps.map((s,i)=>`<li><button data-step="${i}" ${i===n&&!finish?'aria-current="step"':''}><span class="step-number">${i+1}</span><span>${s.title}</span></button></li>`).join('')}</ol><div class="progress-wrap"><label for="lesson-progress">${finish?'학습 완료':`${n+1} / ${g.steps.length}단계`}</label><progress id="lesson-progress" max="${g.steps.length}" value="${finish?g.steps.length:n}">${n}단계</progress></div></aside><div><section class="step-panel" id="step-panel" tabindex="-1">${finish?completion(g):stepContent(g,n)}</section><div class="lesson-bottom">${g.url?link(['center','health','programs'].includes(g.id)?region()?.url||g.url:g.url,['center','health','programs'].includes(g.id)&&region()?'지역 누리집 열기':'공식 사이트 열기','button secondary official-link'):''}<p>외부 사이트는 새 창으로 열려요. 이 안내로 돌아와 계속 배울 수 있어요.<br>안내 사진은 올려주신 원본 캡처입니다. 실제 사이트의 현재 화면은 달라질 수 있어요.</p>${sources(g)}</div></div></div><div class="print-all">${g.steps.map((s,i)=>`<section class="print-step"><h2>${i+1}. ${s.title}</h2>${s.image?'<img src="'+s.image+'" alt="'+escape(s.title)+'">':''}<p>${s.body}</p><p class="tip">기억해 주세요: ${s.tip}</p></section>`).join('')}<h2>참고 자료</h2>${g.sources.map(([name,url])=>`<p>${name}: <a href="${url}">${url}</a></p>`).join('')}<p>사과나무 · 2026년 11월 3일 안내 작성 · 실제 화면과 메뉴는 변경될 수 있어요.</p></div></main>`;
-  }
-  function sources(g) {
-    return `<details class="lesson-sources"><summary>참고 자료와 안내 기준</summary>${g.sources.length?`<ul>${g.sources.map(([name,url])=>`<li>${link(url,name)}</li>`).join('')}</ul>`:'<p>사과나무에서 제작한 기초 사용법과 연습 화면이에요.</p>'}<p>안내 작성: 2026년 11월 3일. 메뉴 이름과 화면은 변경될 수 있어요.${g.id==='jobs'?' 일자리 사이트의 최신 화면은 직접 확인하지 못했어요. 모집 기관의 현재 안내를 확인해 주세요.':''}</p></details>`;
+    return `<main id="main" class="container lesson-container simple-lesson" tabindex="-1"><div class="lesson-title-row"><a class="button secondary" href="index.html?view=list" data-nav="list">${icon('back')}목록</a><h1>${g.title}</h1></div><section class="step-panel" id="step-panel" tabindex="-1">${stepContent(g,stepIndex(g))}</section>${official(g)}<div class="print-all">${g.steps.map((s,i)=>`<section class="print-step"><h2>${s.title}</h2>${s.image?'<img src="'+s.image+'" alt="'+escape(s.title)+'">':'<p>'+s.body+'</p>'}</section>`).join('')}</div></main>`;
   }
   function photoMarkup(s) {
-    return `<figure class="photo-frame" data-photo-frame data-photo-key="${s.imageId}" data-photo-scale="100"><div class="photo-tools"><strong>안내 사진</strong><div class="photo-controls"><button data-photo-action="out" aria-label="사진 축소">−</button><output data-photo-output aria-label="사진 확대 비율">100%</output><button data-photo-action="in" aria-label="사진 확대">+</button><button data-photo-action="reset">맞춰보기</button><button data-photo-action="open">크게 열기${icon('external')}</button></div></div><div class="photo-viewport" tabindex="0" role="region" aria-label="안내 사진. 확대 후 마우스로 끌거나 손가락으로 밀어 이동할 수 있습니다."><div class="photo-canvas"><img src="${s.image}" width="1280" height="720" draggable="false" alt="${escape(s.title)}. ${escape(s.body)}">${s.points.map((p,i)=>`<button class="photo-target" data-photo-point="${i+1}" data-point-label="${escape(p.label)}" style="left:${p.x}%;top:${p.y}%;width:${p.w}%;height:${p.h}%" aria-label="${i+1}번: ${escape(p.label)} 위치 확인"><span>${i+1}</span></button>`).join('')}</div></div><figcaption><span>${s.points.length?'번호 표시를 누르면 메뉴 이름을 확인할 수 있습니다.':'사진 안의 위치와 안내 내용을 살펴보세요.'}</span><span>확대 후 끌어서 이동</span></figcaption><p class="photo-feedback" role="status" aria-live="polite"></p></figure>`;
+    return `<figure class="photo-frame"><div class="photo-viewport"><div class="photo-canvas"><img src="${s.image}" width="1280" height="720" draggable="false" alt="${escape(s.title)}">${s.points.map((p,i)=>`<button class="photo-target" data-photo-point="${i+1}" style="left:${p.x}%;top:${p.y}%;width:${p.w}%;height:${p.h}%" aria-label="${i+1}번 ${escape(p.label)}"><span>${i+1}</span></button>`).join('')}</div></div></figure>`;
   }
-  function stepContent(g,n) {
+  function stepContent(g,n,chat=false) {
     const s=g.steps[n];
-    return `<div class="step-kicker">${n+1} / ${g.steps.length}단계</div><h2>${s.title}</h2><p class="step-body">${s.body}</p>${s.image?photoMarkup(s):mock(s)}${!s.image?'<div class="tip">'+icon('light')+'<span>'+s.tip+'</span></div>':''}<div class="step-actions"><button class="button secondary" data-step="${n-1}" ${n===0?'disabled':''}>${icon('back')}이전 단계</button><button class="button" ${n===g.steps.length-1?'data-action="finish"':'data-step="'+(n+1)+'"'}>${n===g.steps.length-1?'학습 마치기':g.photo?'다음 사진':'다음 단계'}${icon(n===g.steps.length-1?'check':'arrow')}</button></div>`;
+    return `<h2>${s.title}</h2>${s.image?photoMarkup(s):'<p class="step-body">'+s.body+'</p>'+mock(s)}${g.steps.length>1?`<div class="step-actions"><button class="button secondary" ${chat?'data-chat-step':'data-step'}="${n-1}" ${n===0?'disabled':''}>${icon('back')}${g.photo?'이전 사진':'이전'}</button><button class="button" ${chat?'data-chat-step':'data-step'}="${n+1}" ${n===g.steps.length-1?'disabled':''}>${g.photo?'다음 사진':'다음'}${icon('arrow')}</button></div>`:''}`;
   }
   function mock(s) {
     let inner='';
@@ -176,7 +177,10 @@
   app.addEventListener('click',event=>{
     const target=event.target.closest('button,a');if(!target)return;
     if(target.hasAttribute('data-close')){target.closest('dialog').close();return;}
-    if(target.dataset.nav){event.preventDefault();category='all';query='';if(target.dataset.nav==='saved')navigate({view:'saved'});else navigate({},target.dataset.nav==='local'?'local':'learn');return;}
+    if(target.dataset.nav){event.preventDefault();category='all';query='';photoRegion='all';navigate({view:target.dataset.nav==='list'?'list':null});return;}
+    if(target.dataset.chatRegion){chatRegion=target.dataset.chatRegion;chatChoice=null;chatStep=0;render();document.querySelector('.chat-question h1')?.focus?.({preventScroll:true});return;}
+    if(target.dataset.chatChoice!==undefined){chatChoice=choicesFor(chatRegion)[Number(target.dataset.chatChoice)];chatStep=chatChoice.step;render();document.getElementById('chat-result')?.scrollIntoView({block:'start',behavior:'instant'});return;}
+    if(target.dataset.chatStep!==undefined){const g=D.guides.find(g=>g.id===chatChoice?.guide),n=Number(target.dataset.chatStep);if(!g||n<0||n>=g.steps.length)return;chatStep=n;render();document.getElementById('step-panel')?.scrollIntoView({block:'start',behavior:'instant'});return;}
     if(target.dataset.category){category=target.dataset.category;renderCards();if(target.hasAttribute('data-jump-learn'))document.getElementById('learn')?.scrollIntoView();return;}
     if(target.dataset.photoRegion){photoRegion=target.dataset.photoRegion;renderCards();return;}
     if(target.dataset.save){
@@ -192,6 +196,9 @@
       case 'zoom-out':window.AppleTreeView?.changeScale(-50);return;
       case 'zoom-reset':window.AppleTreeView?.stop();return;
       case 'magnify':window.AppleTreeView?.toggle();return;
+      case 'page-in':window.AppleTreeView?.changePageScale(25);return;
+      case 'chat-region-reset':chatRegion='';chatChoice=null;chatStep=0;render();window.scrollTo({top:0,left:0,behavior:'instant'});return;
+      case 'chat-service-reset':chatChoice=null;chatStep=0;render();window.scrollTo({top:0,left:0,behavior:'instant'});return;
       case 'contrast':contrast=!contrast;write('contrast',contrast);applyPreferences();announce(contrast?'또렷한 화면을 켰어요.':'기본 화면으로 돌아왔어요.');return;
       case 'region':document.getElementById('region-dialog').showModal();return;
       case 'help':document.getElementById('help-dialog').showModal();return;
